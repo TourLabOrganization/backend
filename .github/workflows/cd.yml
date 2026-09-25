@@ -9,7 +9,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
   DEPLOY_DIR: app
 
 jobs:
@@ -24,6 +23,10 @@ jobs:
       packages: write
 
     steps:
+      - name: 이미지 이름 결정
+        # ghcr 태그는 소문자만 허용한다 (조직·레포명에 대문자가 있을 수 있다)
+        run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
       - name: 체크아웃
         uses: actions/checkout@v7
 
