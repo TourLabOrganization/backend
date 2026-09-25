@@ -1,4 +1,32 @@
 services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: app-db
+    restart: unless-stopped
+    env_file: ./app.env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tourlab}
+      POSTGRES_USER: ${DB_USERNAME:?app.env에 DB_USERNAME이 필요하다}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?app.env에 DB_PASSWORD가 필요하다}
+    expose:
+      - "5432"
+    mem_limit: 256m
+    memswap_limit: 512m
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - app
+
   app:
     image: ${IMAGE:?app.env 또는 배포 스크립트에 IMAGE가 필요하다}
     container_name: app
@@ -13,6 +41,9 @@ services:
       options:
         max-size: 10m
         max-file: "3"
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - app
 
@@ -59,6 +90,7 @@ services:
       - app
 
 volumes:
+  pgdata:
   certbot-conf:
   certbot-www:
 
