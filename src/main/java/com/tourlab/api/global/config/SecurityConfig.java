@@ -1,9 +1,9 @@
 package com.tourlab.api.global.config;
 
+import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.tourlab.api.global.security.CorsProperties;
 import com.tourlab.api.global.security.JwtProperties;
 import com.tourlab.api.global.security.service.UserPrincipalJwtAuthenticationConverter;
-import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import javax.crypto.spec.SecretKeySpec;
