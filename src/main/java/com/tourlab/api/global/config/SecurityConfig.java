@@ -111,7 +111,10 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource(CorsProperties corsProperties) {
     CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(corsProperties.allowedOrigins());
+    // setAllowedOrigins 는 정확히 일치하는 주소만 받는다. Vercel 미리보기 배포는 PR마다
+    // 주소가 새로 생겨서 미리 적어둘 수 없으므로 와일드카드를 쓸 수 있는 쪽을 쓴다.
+    // 평범한 주소를 넣어도 그대로 동작한다.
+    config.setAllowedOriginPatterns(corsProperties.allowedOrigins());
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
     config.setAllowedHeaders(List.of(HttpHeaders.AUTHORIZATION, HttpHeaders.CONTENT_TYPE));
     config.setAllowCredentials(true);
