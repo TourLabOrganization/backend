@@ -1,0 +1,67 @@
+services:
+  app:
+    image: ${IMAGE:?app.env 또는 배포 스크립트에 IMAGE가 필요하다}
+    container_name: app
+    restart: unless-stopped
+    env_file: ./app.env
+    expose:
+      - "8080"
+    mem_limit: 700m
+    memswap_limit: 700m
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - app
+
+  nginx:
+    image: nginx:1.29-alpine
+    container_name: app-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?app.env에 DOMAIN이 필요하다}
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - certbot-conf:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+    command: /bin/sh -c 'while :; do sleep 24h & wait $${!}; nginx -s reload; done & exec /docker-entrypoint.sh nginx -g "daemon off;"'
+    depends_on:
+      app:
+        condition: service_started
+        restart: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - app
+
+  certbot:
+    image: certbot/certbot:v5.7.0
+    container_name: app-certbot
+    restart: unless-stopped
+    volumes:
+      - certbot-conf:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done'
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - app
+
+volumes:
+  certbot-conf:
+  certbot-www:
+
+networks:
+  app:
+    driver: bridge

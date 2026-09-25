@@ -1,0 +1,16 @@
+#!/bin/sh
+# Spotless 포맷 검사 (opt-in git hook)
+#
+# 활성화: ./gradlew installGitHooks
+#         (또는 직접: git config core.hooksPath .githooks)
+# 비활성화: git config --unset core.hooksPath
+
+echo "Spotless 포맷 검사"
+
+./gradlew spotlessCheck --daemon
+if [ $? -ne 0 ]; then
+  echo "   './gradlew spotlessApply' 로 자동 정렬 후 다시 커밋해주세요."
+  exit 1
+fi
+
+echo "완료"

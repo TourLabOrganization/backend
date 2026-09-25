@@ -1,0 +1,12 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+jwt:
+  secret: test-jwt-secret-key-for-unit-tests-please-ignore
+  access-token-expiry: 30m
+  refresh-token-expiry: 14d
+
+cors:
+  allowed-origins: http://localhost:3000

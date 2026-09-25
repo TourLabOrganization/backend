@@ -1,0 +1,23 @@
+# 로컬 개발용 DB. 운영 DB(RDS)는 docker-compose.yml 에 없고 환경변수로 주입한다.
+#   docker compose -f docker-compose.dev.yml up -d
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: tourlab-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tourlab
+      POSTGRES_USER: tourlab
+      POSTGRES_PASSWORD: tourlab
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tourlab -d tourlab"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
