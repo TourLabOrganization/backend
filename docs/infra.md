@@ -8,7 +8,7 @@
 
 | 역할 | 사설 IP | 유형 | 비고 |
 | --- | --- | --- | --- |
-| API (Spring) | — | t4g.small (arm64) | nginx · certbot 동거 |
+| API (Spring) | 172.31.13.185 | t4g.small (arm64) | nginx · certbot 동거 |
 | DB (PostgreSQL) | 172.31.3.171 | t4g.small (arm64) | 외부 노출 없음 |
 
 ## DB 인스턴스 초기 구성
@@ -48,6 +48,61 @@ DB 인스턴스는 인터넷에 포트를 열지 않는다. 5432만 API 서버�
 # API 서버에서
 nc -zv 172.31.3.171 5432
 ```
+
+## 도메인과 인증서
+
+공인 인증서는 **IP 주소로는 발급되지 않는다**(Let's Encrypt 정책). 그래서 IP를
+그대로 이름으로 되돌려주는 무료 와일드카드 DNS `nip.io`를 쓴다.
+
+```
+DOMAIN=3.36.114.238.nip.io      →  3.36.114.238
+```
+
+`app.env`의 `DOMAIN`이 nginx 템플릿과 인증서 경로 양쪽에 그대로 들어가므로,
+**IP가 바뀌면 여기만 고치고 인증서를 다시 발급**하면 된다. 정식 도메인을 사면
+같은 자리에 도메인만 넣는다.
+
+### 최초 발급
+
+nginx는 인증서가 없으면 뜨지 못하고, webroot 검증은 nginx가 떠 있어야 한다.
+그래서 **첫 발급만** nginx를 내리고 standalone으로 받는다.
+
+```bash
+cd ~/app
+docker stop app-nginx app-certbot
+
+docker run --rm -p 80:80 \
+  -v app_certbot-conf:/etc/letsencrypt \
+  -v app_certbot-www:/var/www/certbot \
+  certbot/certbot:v5.7.0 certonly --standalone \
+  -d "$DOMAIN" --email <관리자 메일> --agree-tos --no-eff-email -n
+```
+
+### 갱신은 webroot로
+
+발급 직후 갱신 설정은 `standalone`으로 저장돼 있는데, 이대로 두면 **갱신이
+반드시 실패한다** — 80 포트를 nginx가 잡고 있기 때문이다. nginx가
+`/.well-known/acme-challenge/`를 이미 서빙하므로 webroot로 바꾼다.
+
+`/etc/letsencrypt/renewal/<DOMAIN>.conf` 의 `[renewalparams]` 안이어야 한다.
+섹션을 잘못 잡으면 값이 무시된다.
+
+```ini
+[renewalparams]
+authenticator = webroot
+webroot_path = /var/www/certbot,
+[[webroot_map]]
+<DOMAIN> = /var/www/certbot
+```
+
+확인:
+
+```bash
+docker exec app-certbot certbot renew --dry-run
+```
+
+`certbot` 컨테이너가 12시간마다 `certbot renew`를 돌린다.
+
 
 ## 스키마와 데이터
 
