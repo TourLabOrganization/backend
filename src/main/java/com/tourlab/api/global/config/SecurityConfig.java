@@ -45,11 +45,19 @@ public class SecurityConfig {
   private static final String TOKEN_TYPE_ACCESS = "access";
 
   private static final String[] PUBLIC_GET_PATHS = {
-    "/health", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**"
+    "/health",
+    "/swagger-ui/**",
+    "/swagger-ui.html",
+    "/v3/api-docs/**",
+    // 장소·분석 데이터는 로그인 없이 본다. 개인정보가 없고 화면 첫 진입에 필요하다.
+    "/api/v1/places",
+    "/api/v1/tfi",
+    "/api/v1/staytime",
+    "/api/v1/personas"
   };
 
   private static final String[] PUBLIC_POST_PATHS = {
-    "/api/v1/auth/signup", "/api/v1/auth/login", "/api/v1/auth/reissue"
+    "/api/v1/auth/signup", "/api/v1/auth/login", "/api/v1/auth/reissue", "/api/v1/recommend"
   };
 
   @Bean

@@ -10,3 +10,7 @@ jwt:
 
 cors:
   allowed-origins: http://localhost:3000
+
+# 테스트는 data-server를 부르지 않는다. 설정이 비면 컨텍스트가 뜨지 않으므로 값만 채워 둔다.
+data-server:
+  base-url: http://localhost:8000

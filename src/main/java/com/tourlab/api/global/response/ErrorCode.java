@@ -42,6 +42,9 @@ public enum ErrorCode {
   UNSUPPORTED_MEDIA_TYPE(
       HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE", "지원하지 않는 Content-Type입니다."),
 
+  // 502 Bad Gateway
+  DATA_SERVER_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "DATA_SERVER_UNAVAILABLE", "데이터 서버에 연결할 수 없습니다."),
+
   // 500 Internal Server Error
   INTERNAL_SERVER_ERROR(
       HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "알 수 없는 서버 오류가 발생했습니다.");
