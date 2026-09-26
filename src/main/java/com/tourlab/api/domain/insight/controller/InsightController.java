@@ -52,7 +52,11 @@ public class InsightController {
         dataServerClient.get("/v1/staytime", query(region), StayTimeResponse.class));
   }
 
-  @Operation(summary = "사용자 유형 조회", description = "미리 계산해 둔 유형 8종과 유형별 테마 순위.")
+  @Operation(
+      summary = "사용자 유형 조회",
+      description =
+          "유형 8종과 각 유형의 군집 코드. 여기 실린 테마 순위는 지역을 고려하지 않은 참고값이므로,"
+              + " 실제 추천은 POST /api/v1/recommend 로 받는다.")
   @ApiErrorCodeExamples({ErrorCode.DATA_SERVER_UNAVAILABLE})
   @GetMapping("/personas")
   public ResponseEntity<ApiResult<PersonaResponse>> getPersonas() {
@@ -60,7 +64,11 @@ public class InsightController {
         dataServerClient.get("/v1/personas", Collections.emptyMap(), PersonaResponse.class));
   }
 
-  @Operation(summary = "테마 추천", description = "설문 응답으로 테마 순위를 계산한다.")
+  @Operation(
+      summary = "테마 추천",
+      description =
+          "설문 응답으로 테마 순위를 계산한다. region을 함께 보내면 데이터랩 지역×테마 강도(TFI)가"
+              + " 점수에 반영된다. 반영 여부는 응답의 regionApplied 와 sources 로 확인한다.")
   @ApiErrorCodeExamples({ErrorCode.INVALID_INPUT_VALUE, ErrorCode.DATA_SERVER_UNAVAILABLE})
   @PostMapping("/recommend")
   public ResponseEntity<ApiResult<RecommendResponse>> recommend(
