@@ -4,6 +4,7 @@ import com.tourlab.api.domain.insight.dto.PersonaResponse;
 import com.tourlab.api.domain.insight.dto.RecommendRequest;
 import com.tourlab.api.domain.insight.dto.RecommendResponse;
 import com.tourlab.api.domain.insight.dto.StayTimeResponse;
+import com.tourlab.api.domain.insight.dto.TfiRegionResponse;
 import com.tourlab.api.domain.insight.dto.TfiResponse;
 import com.tourlab.api.global.annotation.ApiErrorCodeExamples;
 import com.tourlab.api.global.client.DataServerClient;
@@ -33,13 +34,25 @@ public class InsightController {
 
   private final DataServerClient dataServerClient;
 
-  @Operation(summary = "지역×테마 강도(TFI) 조회", description = "데이터랩 지역별 현황으로 계산한 0~1 강도.")
+  @Operation(summary = "지역×테마 강도(TFI) 전체 조회", description = "데이터랩 지역별 현황으로 계산한 0~1 강도를 지역마다 돌려준다.")
   @ApiErrorCodeExamples({ErrorCode.DATA_SERVER_UNAVAILABLE})
   @GetMapping("/tfi")
-  public ResponseEntity<ApiResult<TfiResponse>> getTfi(
-      @Parameter(description = "지역 이름", example = "경주") @RequestParam(required = false)
-          String region) {
-    return ApiResult.success(dataServerClient.get("/v1/tfi", query(region), TfiResponse.class));
+  public ResponseEntity<ApiResult<TfiResponse>> getTfi() {
+    return ApiResult.success(
+        dataServerClient.get("/v1/tfi", Collections.emptyMap(), TfiResponse.class));
+  }
+
+  // region 을 주면 data-server 가 다른 모양을 준다(tfi 가 지역별 이중 맵이 아니라 테마 단일 맵,
+  // 대신 detail 이 붙는다). 한 DTO 로 둘 다 받으려다 파싱이 깨져 502 가 나갔었다.
+  @Operation(
+      summary = "지역 하나의 테마 강도 조회",
+      description = "전체 조회와 응답 모양이 다르다. tfi 가 테마→값 이고 산출 근거(detail)가 함께 온다.")
+  @ApiErrorCodeExamples({ErrorCode.DATA_SERVER_UNAVAILABLE})
+  @GetMapping(value = "/tfi", params = "region")
+  public ResponseEntity<ApiResult<TfiRegionResponse>> getTfiByRegion(
+      @Parameter(description = "지역 이름", example = "경주") @RequestParam String region) {
+    return ApiResult.success(
+        dataServerClient.get("/v1/tfi", Map.of("region", region), TfiRegionResponse.class));
   }
 
   @Operation(summary = "지역 체류시간 조회", description = "데이터랩 방문당 체류시간과 전국 대비 지수.")
