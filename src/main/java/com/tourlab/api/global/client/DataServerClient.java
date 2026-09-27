@@ -6,6 +6,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -64,6 +65,10 @@ public class DataServerClient {
       // 4xx는 보낸 값이 잘못됐다는 뜻이다. 서버가 죽은 것처럼 알리면 원인을 못 찾는다.
       log.warn("data-server가 요청을 거절: {} {}", path, e.getResponseBodyAsString());
       throw ApiException.of(ErrorCode.INVALID_INPUT_VALUE);
+    } catch (HttpMessageConversionException e) {
+      // 닿기는 했는데 응답 모양이 우리 DTO와 다르다. 연결 문제로 읽으면 엉뚱한 데를 뒤지게 된다.
+      log.error("data-server 응답을 읽지 못함(DTO 불일치): {}", path, e);
+      throw ApiException.of(ErrorCode.DATA_SERVER_UNAVAILABLE);
     } catch (RestClientException e) {
       // 주소·포트·보안그룹 문제인지 data-server 자체 오류인지는 로그로만 남기고
       // 클라이언트에는 같은 코드로 내려준다.
