@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
@@ -59,6 +60,10 @@ public class DataServerClient {
         throw ApiException.of(ErrorCode.DATA_SERVER_UNAVAILABLE);
       }
       return body;
+    } catch (HttpClientErrorException e) {
+      // 4xx는 보낸 값이 잘못됐다는 뜻이다. 서버가 죽은 것처럼 알리면 원인을 못 찾는다.
+      log.warn("data-server가 요청을 거절: {} {}", path, e.getResponseBodyAsString());
+      throw ApiException.of(ErrorCode.INVALID_INPUT_VALUE);
     } catch (RestClientException e) {
       // 주소·포트·보안그룹 문제인지 data-server 자체 오류인지는 로그로만 남기고
       // 클라이언트에는 같은 코드로 내려준다.

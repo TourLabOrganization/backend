@@ -1,9 +1,13 @@
 package com.tourlab.api.domain.insight.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 
+// 주지 않은 값은 null로 보내지 않고 아예 뺀다. data-server가 정수·문자열을 기대하는
+// 자리에 null이 가면 422로 거절한다.
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "테마 추천 요청")
 public record RecommendRequest(
     @Schema(description = "군집 코드. /api/v1/personas 의 clusters 값", example = "C4") @NotBlank
