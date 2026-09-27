@@ -16,5 +16,12 @@ public record ItineraryRequest(
     @Schema(description = "이동수단: transit · driving · own", example = "transit") String mode,
     @Schema(description = "출발지 출발 시각", example = "08:00") String depTime,
     @Schema(description = "여행지 출발(귀가) 시각", example = "19:00") String retTime,
-    @Schema(description = "출발지에서 지역 관문까지 광역 이동(분). 첫날 일정 창을 줄인다", example = "0")
-        Integer accessMin) {}
+    @Schema(description = "출발지에서 지역 관문까지 광역 이동(분). 첫날 일정 창을 줄인다", example = "0") Integer accessMin,
+    // 코스 순서는 영상 장면 순서라 동선이 아니다. 켜면 같은 일수에 더 많이 들어간다.
+    @Schema(
+            description =
+                "동선을 다시 짤지. 코스 순서는 영상 장면 순서라 이동 효율이 나쁘다."
+                    + " 켜면 RESCENE 3일 기준 6곳에서 14곳으로 늘어난다."
+                    + " 화면에 쓰는 코스 순서(seq)는 그대로고 일정만 재배열한다",
+            defaultValue = "false")
+        Boolean optimizeOrder) {}
