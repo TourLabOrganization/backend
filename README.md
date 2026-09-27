@@ -22,13 +22,14 @@
 |---|---|
 | `backend` (이 저장소) | 장소·코스 API, 인증, 배포 |
 | `frontend` | Next.js 웹앱 (Vercel) |
-| `data-server` | 추천 알고리즘 (FastAPI) |
+| `data-server` | 데이터랩·TourAPI 파이프라인과 추천 (FastAPI). 사설 IP라 이 서버만 호출한다 |
 | `Tour-Navigator-App` | 기획 프로토타입 · 데이터랩 ETL |
 
 ## 들어 있는 것
 
 | 영역 | 내용 |
 |---|---|
+| 장소·분석 | data-server 중계 5종. 계산은 data-server에서 끝나고 여기서는 넘겨주기만 한다 |
 | 도메인 | `places` · `courses` · `course_places` 엔티티, `users` · `refresh_tokens` |
 | 공통 응답 | `ApiResult` / `ErrorResult` / `SuccessCode` / `ErrorCode` |
 | 예외 처리 | `ApiException` + `GlobalExceptionHandler` (12개 핸들러) |
@@ -56,6 +57,9 @@ Course ──< CoursePlace >── Place
 `Place.code`는 프로토타입이 쓰던 문자열 식별자(`'jd1'`)를 그대로 유지한 자연키다.
 ETL을 다시 돌려도 같은 장소를 찾아내는 데 쓴다.
 
+**이 엔티티들은 아직 API가 쓰지 않는다.** 장소는 data-server에서 그대로 넘겨주고 있다.
+사용자가 일정을 저장하거나 장소를 찜하는 기능이 생기면 그때 채운다.
+
 **아직 믿을 수 없는 값이 둘 있다.** 코드 주석에도 적어 뒀다.
 
 - `Place.category` — 프로토타입의 `cat`을 옮긴 것이라 오분류가 있다.
@@ -66,6 +70,36 @@ ETL을 다시 돌려도 같은 장소를 찾아내는 데 쓴다.
 
 ## API
 
+전체 명세는 `/swagger-ui.html`.
+
+### 장소·분석
+
+data-server가 만든 결과를 넘겨준다. 로그인 없이 부를 수 있다.
+
+| 메서드 | 경로 | 내용 |
+|---|---|---|
+| GET | `/api/v1/places` | 장소 1,171곳. `?region=경주`로 거른다 |
+| GET | `/api/v1/tfi` | 지역×테마 강도(TFI) |
+| GET | `/api/v1/staytime` | 지역 체류시간과 전국 대비 지수 |
+| GET | `/api/v1/personas` | 사용자 유형과 군집 코드 |
+| POST | `/api/v1/recommend` | 설문 응답 → 테마 추천 순위 |
+
+**추천에는 `region`을 함께 보낸다.** 그래야 데이터랩 지역×테마 강도가 점수에 반영된다.
+반영 여부는 응답의 `regionApplied`와 `sources`로 확인한다.
+
+```
+region 있음 → sources: ["국민여행조사", "외래관광객조사", "한국관광 데이터랩 (지역×테마 강도 TFI)"]
+region 없음 → sources: ["국민여행조사", "외래관광객조사"]
+```
+
+`/api/v1/personas`의 테마 순위는 지역을 반영하지 않은 참고값이다. 실제 추천은 `/api/v1/recommend`로 받는다.
+
+전체 장소 응답은 440KB다. 화면에서는 `?region=`으로 좁혀 쓴다.
+
+data-server에 닿지 못하면 502 `DATA_SERVER_UNAVAILABLE`을 돌려준다.
+
+### 인증
+
 | 메서드 | 경로 | 인증 |
 |---|---|---|
 | POST | `/api/v1/auth/signup` | 불필요 |
@@ -75,12 +109,15 @@ ETL을 다시 돌려도 같은 장소를 찾아내는 데 쓴다.
 | GET | `/api/v1/users/me` | access token |
 | GET | `/health` | 불필요 |
 
-장소·코스 조회 API는 아직 없다. 자세한 규약은 `docs/security.md`.
+자세한 규약은 `docs/security.md`.
 
 ## 들어 있지 않은 것
 
-장소·코스 조회 API와 시드 데이터, 마이그레이션 도구, 소셜 로그인, 비밀번호 재설정,
-이메일 발송, 외부 API 클라이언트, 파일 업로드, APM 에이전트.
+**코스 API.** 어느 장소가 어느 코스에 몇 번째로 들어가는지는 data-server가 아직 내려주지
+않는다(`/v1/places`에 순번과 코스 이름이 없다). 나오면 중계를 붙인다.
+
+그 밖에 장소 시드 데이터, 찜·일정 저장, 마이그레이션 도구, 소셜 로그인, 비밀번호 재설정,
+이메일 발송, 파일 업로드, APM 에이전트.
 
 스키마는 Hibernate `ddl-auto`가 만든다. 로컬은 `update`, 테스트는 `create-drop`이다.
 운영에 올리기 전에 마이그레이션 도구를 붙이고 `validate`로 바꾼다 (`docs/entity.md`).
@@ -97,11 +134,25 @@ docker compose -f docker-compose.dev.yml up -d
 cp .env.example .env
 ```
 
-`.env.example`의 로컬 값은 위 컨테이너에 그대로 맞춰져 있다. 채워야 하는 건 하나다.
+`.env.example`의 로컬 값은 위 컨테이너에 그대로 맞춰져 있다. 채워야 하는 건 둘이다.
 
 | 이름 | 설명 |
 |---|---|
 | `JWT_SECRET` | HS256 서명 키. **32바이트 이상**이어야 기동한다. `openssl rand -base64 48` |
+| `DATA_SERVER_URL` | data-server 주소. 없으면 기동하지 않는다 |
+
+**`.env`를 읽어 주는 라이브러리는 없다.** 파일만 만들어 두면 값이 들어가지 않으니 직접 내보낸다.
+
+```bash
+set -a && . ./.env && set +a
+```
+
+data-server는 사설 IP(`172.31.15.78`)라 밖에서 닿지 않는다. 로컬에서 붙이려면 터널을 판다.
+
+```bash
+ssh -i <키> -f -N -L 8000:172.31.15.78:8000 ec2-user@<API 서버>
+# 그리고 DATA_SERVER_URL=http://localhost:8000
+```
 
 ### 실행
 
