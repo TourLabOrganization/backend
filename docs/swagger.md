@@ -37,4 +37,4 @@ springdoc-openapi가 스펙을 `/v3/api-docs`로, Swagger UI를 `/swagger-ui.htm
 
 `bearerAuth`(HTTP bearer, JWT) security scheme이 전역으로 걸려 있다.
 Swagger UI의 Authorize에 access token을 넣으면 그 토큰으로 인증된 요청이 나간다.
-토큰은 `POST /api/v1/auth/login`으로 받는다 (`security.md`).
+토큰은 `POST /api/v1/auth/login` 또는 `POST /api/v1/auth/kakao`로 받는다 (`security.md`).

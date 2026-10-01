@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "내 정보 응답")
 public record UserMeResponse(
     @Schema(description = "사용자 ID", example = "1") Long id,
-    @Schema(description = "이메일", example = "user@example.com") String email,
+    @Schema(description = "이메일. 카카오 계정은 null", example = "user@example.com") String email,
     @Schema(description = "닉네임", example = "홍길동") String nickname,
     @Schema(description = "권한", example = "USER") Role role) {
 

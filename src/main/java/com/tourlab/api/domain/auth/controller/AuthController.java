@@ -1,5 +1,6 @@
 package com.tourlab.api.domain.auth.controller;
 
+import com.tourlab.api.domain.auth.dto.AuthKakaoRequest;
 import com.tourlab.api.domain.auth.dto.AuthLoginRequest;
 import com.tourlab.api.domain.auth.dto.AuthReissueRequest;
 import com.tourlab.api.domain.auth.dto.AuthSignupRequest;
@@ -45,6 +46,18 @@ public class AuthController {
   public ResponseEntity<ApiResult<AuthTokenResponse>> login(
       @Valid @RequestBody AuthLoginRequest request) {
     return ApiResult.success(authService.login(request));
+  }
+
+  @Operation(summary = "카카오 로그인", description = "카카오 access token을 검증하고 서비스 JWT를 발급한다.")
+  @ApiErrorCodeExamples({
+    ErrorCode.INVALID_INPUT_VALUE,
+    ErrorCode.AUTH_KAKAO_TOKEN_INVALID,
+    ErrorCode.KAKAO_UNAVAILABLE
+  })
+  @PostMapping("/kakao")
+  public ResponseEntity<ApiResult<AuthTokenResponse>> loginWithKakao(
+      @Valid @RequestBody AuthKakaoRequest request) {
+    return ApiResult.success(authService.loginWithKakao(request.accessToken()));
   }
 
   @Operation(

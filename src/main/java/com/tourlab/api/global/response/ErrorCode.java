@@ -19,6 +19,8 @@ public enum ErrorCode {
 
   // 401 Unauthorized
   AUTH_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "AUTH_LOGIN_FAILED", "이메일 또는 비밀번호가 올바르지 않습니다."),
+  AUTH_KAKAO_TOKEN_INVALID(
+      HttpStatus.UNAUTHORIZED, "AUTH_KAKAO_TOKEN_INVALID", "유효하지 않은 카카오 인증 토큰입니다."),
   AUTH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "AUTH_TOKEN_INVALID", "유효하지 않은 인증 토큰입니다."),
   AUTH_REFRESH_TOKEN_INVALID(
       HttpStatus.UNAUTHORIZED, "AUTH_REFRESH_TOKEN_INVALID", "유효하지 않은 refresh token입니다."),
@@ -44,6 +46,7 @@ public enum ErrorCode {
 
   // 502 Bad Gateway
   DATA_SERVER_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "DATA_SERVER_UNAVAILABLE", "데이터 서버에 연결할 수 없습니다."),
+  KAKAO_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "KAKAO_UNAVAILABLE", "카카오 인증 서버에 연결할 수 없습니다."),
 
   // 500 Internal Server Error
   INTERNAL_SERVER_ERROR(

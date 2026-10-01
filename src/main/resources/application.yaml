@@ -23,3 +23,6 @@ cors:
 
 data-server:
   base-url: ${DATA_SERVER_URL}
+
+kakao:
+  app-id: ${KAKAO_APP_ID}
