@@ -1,5 +1,6 @@
 package com.tourlab.api.domain.auth.service;
 
+import com.tourlab.api.domain.auth.client.KakaoClient;
 import com.tourlab.api.domain.auth.dto.AuthLoginRequest;
 import com.tourlab.api.domain.auth.dto.AuthReissueRequest;
 import com.tourlab.api.domain.auth.dto.AuthSignupRequest;
@@ -33,6 +34,7 @@ public class AuthService {
   private final RefreshTokenRepository refreshTokenRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtProvider jwtProvider;
+  private final KakaoClient kakaoClient;
 
   @Transactional
   public AuthSignupResponse signup(AuthSignupRequest request) {
@@ -54,11 +56,22 @@ public class AuthService {
             .findByEmail(request.email())
             .orElseThrow(() -> ApiException.of(ErrorCode.AUTH_LOGIN_FAILED));
 
-    if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+    if (user.getPassword() == null
+        || !passwordEncoder.matches(request.password(), user.getPassword())) {
       throw ApiException.of(ErrorCode.AUTH_LOGIN_FAILED);
     }
 
     log.info("[로그인] userId={}", user.getId());
+    return issueTokens(user);
+  }
+
+  @Transactional
+  public AuthTokenResponse loginWithKakao(String kakaoAccessToken) {
+    Long kakaoId = kakaoClient.getVerifiedUserId(kakaoAccessToken);
+    User user =
+        userRepository
+            .findByKakaoId(kakaoId)
+            .orElseGet(() -> userRepository.save(new User(kakaoId)));
     return issueTokens(user);
   }
 

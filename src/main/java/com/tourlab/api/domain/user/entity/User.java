@@ -9,13 +9,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "users")
+@Table(
+    name = "users",
+    uniqueConstraints = @UniqueConstraint(name = "uk_users_kakao_id", columnNames = "kakao_id"))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseTimeEntity {
 
@@ -23,11 +26,14 @@ public class User extends BaseTimeEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false, length = 255)
+  @Column(length = 255)
   private String email;
 
-  @Column(nullable = false, length = 60)
+  @Column(length = 60)
   private String password;
+
+  @Column(name = "kakao_id")
+  private Long kakaoId;
 
   @Column(nullable = false, length = 20)
   private String nickname;
@@ -40,6 +46,12 @@ public class User extends BaseTimeEntity {
     this.email = email;
     this.password = password;
     this.nickname = nickname;
+    this.role = Role.USER;
+  }
+
+  public User(Long kakaoId) {
+    this.kakaoId = kakaoId;
+    this.nickname = "카카오 사용자";
     this.role = Role.USER;
   }
 

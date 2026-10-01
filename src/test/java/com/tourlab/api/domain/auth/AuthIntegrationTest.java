@@ -1,12 +1,15 @@
 package com.tourlab.api.domain.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.tourlab.api.TestcontainersConfiguration;
+import com.tourlab.api.domain.auth.client.KakaoClient;
+import com.tourlab.api.domain.auth.dto.AuthKakaoRequest;
 import com.tourlab.api.domain.auth.dto.AuthLoginRequest;
 import com.tourlab.api.domain.auth.dto.AuthReissueRequest;
 import com.tourlab.api.domain.auth.dto.AuthSignupRequest;
@@ -19,6 +22,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import tools.jackson.databind.JsonNode;
@@ -34,6 +38,36 @@ class AuthIntegrationTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
+  @MockitoBean private KakaoClient kakaoClient;
+
+  @Test
+  @DisplayName("카카오 토큰으로 로그인하면 같은 카카오 ID에 같은 사용자로 자체 JWT를 발급한다")
+  void issuesTokensForSameKakaoUser() throws Exception {
+    given(kakaoClient.getVerifiedUserId("valid-kakao-token")).willReturn(98765L);
+
+    JsonNode first = kakaoLogin("valid-kakao-token");
+    JsonNode second = kakaoLogin("valid-kakao-token");
+
+    assertThat(first.get("accessToken").asString()).isNotBlank();
+    assertThat(second.get("refreshToken").asString()).isNotBlank();
+    String firstUser =
+        mockMvc
+            .perform(bearer(get("/api/v1/users/me"), first.get("accessToken").asString()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.email").isEmpty())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String secondUser =
+        mockMvc
+            .perform(bearer(get("/api/v1/users/me"), second.get("accessToken").asString()))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    assertThat(objectMapper.readTree(firstUser).get("data").get("id").asLong())
+        .isEqualTo(objectMapper.readTree(secondUser).get("data").get("id").asLong());
+  }
 
   @Test
   @DisplayName("회원가입한 이메일과 비밀번호로 로그인하면 access token과 refresh token을 받는다")
@@ -190,6 +224,20 @@ class AuthIntegrationTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         objectMapper.writeValueAsString(new AuthLoginRequest(email, PASSWORD))))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    return objectMapper.readTree(body).get("data");
+  }
+
+  private JsonNode kakaoLogin(String token) throws Exception {
+    String body =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/kakao")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(new AuthKakaoRequest(token))))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

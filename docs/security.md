@@ -1,6 +1,7 @@
 # 인증
 
-이메일·비밀번호로 로그인하고 JWT를 발급하는 구조다.
+이메일·비밀번호 또는 카카오 SDK의 access token으로 로그인하고 자체 JWT를 발급하는 구조다.
+카카오 계정은 `users.kakao_id`로 식별하며 이메일 계정과 자동 연결하지 않는다.
 
 | 하는 일 | 위치 |
 |---|---|
@@ -14,6 +15,7 @@
 |---|---|---|
 | POST | `/api/v1/auth/signup` | 불필요 |
 | POST | `/api/v1/auth/login` | 불필요 |
+| POST | `/api/v1/auth/kakao` | 불필요 (카카오 access token을 본문으로 받는다) |
 | POST | `/api/v1/auth/reissue` | 불필요 (refresh token을 본문으로 받는다) |
 | POST | `/api/v1/auth/logout` | access token |
 | GET | `/api/v1/users/me` | access token |
@@ -53,6 +55,16 @@
   68자가 된다. 컬럼 길이를 함께 늘리지 않으면 저장 시점에 잘린다
 - 로그인 실패는 이메일이 없든 비밀번호가 틀리든 `AUTH_LOGIN_FAILED` 하나로 응답한다.
   구분해서 응답하면 가입 여부를 확인하는 수단이 된다
+- 카카오 계정은 이메일과 비밀번호가 없으며, 이메일·비밀번호 로그인으로 인증할 수 없다
+
+## 카카오 로그인
+
+- 프론트 SDK에서 받은 카카오 access token을 `POST /api/v1/auth/kakao`의 `accessToken`으로 전달한다
+- 서버는 카카오 `access_token_info` API에서 토큰 유효성과 `app_id`를 확인한다.
+  `app_id`는 서버에 설정된 `KAKAO_APP_ID`와 같아야 한다
+- 검증된 카카오 회원번호(`id`)로 사용자를 찾거나 새로 만든 후 기존 방식으로 자체 access·refresh token을 발급한다
+- 새 카카오 사용자는 이메일·비밀번호가 없고 닉네임은 `카카오 사용자`로 시작한다.
+  기존 DB에는 `docs/kakao-login.md`의 스키마 변경이 먼저 필요하다
 
 ## 인증 실패 응답
 

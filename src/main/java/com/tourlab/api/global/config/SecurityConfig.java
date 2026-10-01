@@ -60,6 +60,7 @@ public class SecurityConfig {
   private static final String[] PUBLIC_POST_PATHS = {
     "/api/v1/auth/signup",
     "/api/v1/auth/login",
+    "/api/v1/auth/kakao",
     "/api/v1/auth/reissue",
     "/api/v1/recommend",
     "/api/v1/itinerary"
